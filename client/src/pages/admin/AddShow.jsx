@@ -22,7 +22,7 @@ const AddShow = () => {
     const [date,time] = dateTimeInput.split("T");
     if(!date || !time) return;
 
-    setDateTimeInput((prev)=>{
+    setDateTimeSelection((prev)=>{
       const times = prev[date] || [];
       if(!times.includes(time)){
         return {...prev,[date]: [...times,time]};
@@ -118,6 +118,10 @@ const AddShow = () => {
             </ul>
           </div>
         )}
+
+        <button className='bg-primary text-white px-8 py-2 mt-6 rounded hover:bg-primary/90 transition-all cursor-pointer'>
+          Add Show
+        </button>
     </>
   ) : <Loading/>
 }
