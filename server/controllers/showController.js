@@ -69,6 +69,7 @@ export const addShow = async (req,res) =>{
       const movieCreditsData = movieCreditsResponse.data;
 
       // Creating object of details of movie to store in db
+
       const movieDetails = {
         _id : movieId,
         title : movieApiData.title,
@@ -83,6 +84,7 @@ export const addShow = async (req,res) =>{
         vote_average : movieApiData.vote_average,
         runtime : movieApiData.runtime,
       }
+      
       // Adding movie to the database
       movie = await Movie.create(movieDetails);
 
@@ -112,5 +114,61 @@ export const addShow = async (req,res) =>{
   } catch (error) {
     console.error(error);
       res.status(500).json({ error: "Failed to fetch now playing movies" });
+  }
+}
+
+// API to get all shows from database
+
+export const getShows = async (req,res) =>{
+  try {
+    const shows = await Show.find({
+      showDateTime : {$gte : new Date()}
+    }).populate('movie').sort({showDateTime : 1});
+
+    // Filter unique shows
+    const uniqueShows = new Set(shows.map(show => show.movie))
+
+    res.json({
+      success : true,
+      shows : Array.from(uniqueShows)
+    })
+
+  } catch (error) {
+    console.log(error);
+    res.json({
+      success :false,
+      message : error.message
+    })
+  }
+}
+
+// API to get a single show from database
+
+export const getShow = async (req,res) => {
+  try {
+    const {movieId} = req.params;
+    // Get all upcoming shows from the movie
+    const shows = await Show.find({movie : movieId,showDateTime : {$gte : new Date() }})
+
+    const movie = await Movie.findById(movieId);
+    const dateTime = {};
+
+    shows.forEach((show)=>{
+      const date = show.showDateTime.toISOString().split("T")[0];
+      if(!dateTime[date]){
+        dateTime[date]  = []
+      }
+      dateTime[date].push({time: show.showDateTime,showId : show._id});
+      res.json({
+        success: true,
+        movie,dateTime
+      })
+    })
+  } catch (error) {
+    console.log(error);
+    res.json({
+      success: false,
+      message : error.message
+    })
   }
 }
