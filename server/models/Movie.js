@@ -19,7 +19,7 @@ const movieSchema = new mongoose.Schema({
     },
     backdrop_path : {
       type : String,
-      required : true,
+      // required : true,
     },
     release_date : {
       type : String,
