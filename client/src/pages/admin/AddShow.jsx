@@ -3,8 +3,13 @@ import Title from '../../components/admin/Title'
 import { assets, dummyShowsData } from '../../assets/assets';
 import Loading from '../../components/Loading';
 import {CheckIcon, DeleteIcon, StarIcon} from 'lucide-react'
+import { useAppContext } from '../../context/AppContext';
+import toast from 'react-hot-toast';
+import MovieDetails from '../MovieDetails';
 
 const AddShow = () => {
+
+  const {axios,getToken,user,image_base_url} = useAppContext();
 
   const currency = import.meta.env.VITE_CURRENCY 
   const [playingMovies,setPlayingMovies] = useState([]);
@@ -12,9 +17,20 @@ const AddShow = () => {
   const [dateTimeSelection,setDateTimeSelection] = useState({});
   const [dateTimeInput,setDateTimeInput] = useState("");
   const [showPrice, setShowPrice] = useState("");
+  const [addingShow,setAddingShow] = useState(false);
+
 
   const fetchPlayingMovies = async () => {
-    setPlayingMovies(dummyShowsData);
+    try {
+      const {data} = await axios.get('/api/show/now-playing',{
+        headers : { Authorization : `Bearer ${await getToken()}`}
+      })
+      if(data.success){
+        setPlayingMovies(data.movies);
+      }
+    } catch (error) {
+      console.log('Error in fetching movies : ',error);
+    }
   }
 
   const handleDateAndTime = () =>{
@@ -45,11 +61,48 @@ const AddShow = () => {
     });
   };
 
+  const handleSubmit = async () => {
+    try {
+      setAddingShow(true);
+
+      if(!selectedMovie || Object.keys(dateTimeSelection).length === 0 || !showPrice){
+        setAddingShow(false);
+        return toast.error('Missing required field');
+      }
+      
+      const showsInput = Object.entries(dateTimeSelection).map(([date, time]) => ({date,time}));
+
+      const payload = {
+        movieId : selectedMovie,
+        showsInput,
+        showPrice : Number(showPrice)
+      }
+      console.log(payload);
+      const {data} = await axios.post('/api/show/add',payload,{
+        headers : { Authorization : `Bearer ${await getToken()}`}
+      })
+
+      if(data.success){
+        toast.success(data.message);
+        setSelectedMovie(null);
+        setDateTimeInput("");
+        setDateTimeSelection({});
+        setShowPrice("")
+      }else{
+        toast.error(data.message);
+      }
+    } catch (error) {
+      console.log("Submission error : ",error);
+      toast.error("An error occurred . Please try again later");
+    }
+    setAddingShow(false);
+  }
+
   useEffect(()=>{
-    fetchPlayingMovies();
-  },[]);
-
-
+    if(user){
+      fetchPlayingMovies();
+    }
+  },[user]);
 
   return playingMovies.length > 0 ? (
     <>
@@ -58,9 +111,9 @@ const AddShow = () => {
       <div className=' overflow-x-auto pb-4 hide-scrollbar'>
         <div className='group flex flex-wrap gap-4 mt-4 w-max'>
           {playingMovies.map((movie)=>(
-            <div key={movie.id} onClick={()=>setSelectedMovie(movie._id)} className={`relative max-w-40 p-3 m-2 cursor-pointer group-hover:npt-hover:opacity-40 hover:-translate-y-1 transition duration-300 hover:bg-primary-dull rounded-sm`} >
+            <div key={movie.id} onClick={()=>setSelectedMovie(movie.id)} className={`relative max-w-40 p-3 m-2 cursor-pointer group-hover:npt-hover:opacity-40 hover:-translate-y-1 transition duration-300 hover:bg-primary-dull rounded-sm`} >
               <div className='relative rounded-lg overflow-hidden '>
-                <img src={movie.poster_path} alt="" className='w-full object-cover brightness-90'/>
+                <img src={image_base_url + movie.poster_path} alt="" className='w-full object-cover brightness-90'/>
                 <div className='text-sm flex items-center justify-between p-2 bg-black/70 w-full absolute bottom-0 left-0'>
                   <p className='flex items-center gap-1 text-gray-400'>
                     <StarIcon className='w-4 h-4 text=primary fill-primary'/>
@@ -69,7 +122,7 @@ const AddShow = () => {
                   <p className='text-gray-300'>{(movie.vote_count/1000).toFixed(1)}K Votes</p>
                 </div>
               </div>
-              {selectedMovie === movie._id && (
+              {selectedMovie === movie.id && (
                 <div className='absolute top-2 right-2 flex items-center justify-center bg-primary h-6 w-6 rounded'>
                   <CheckIcon className='w-4 h-4 text-white strokeWidth={2.5}'/>
                 </div>
@@ -119,7 +172,7 @@ const AddShow = () => {
           </div>
         )}
 
-        <button className='bg-primary text-white px-8 py-2 mt-6 rounded hover:bg-primary/90 transition-all cursor-pointer'>
+        <button onClick={handleSubmit} disabled = {addingShow} className='bg-primary text-white px-8 py-2 mt-6 rounded hover:bg-primary/90 transition-all cursor-pointer'>
           Add Show
         </button>
     </>

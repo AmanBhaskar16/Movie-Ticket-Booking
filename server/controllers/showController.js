@@ -31,13 +31,17 @@ export const getCurrentPlayingMovie = async (req, res) => {
   const url = 'https://api.themoviedb.org/3/movie/now_playing?language=en-US&page=1';
 
   try {
-    const response = await axios.get(url, {
+    const {data} = await axios.get(url, {
       headers: {
         accept: 'application/json',
         Authorization: `Bearer ${process.env.TMDB_API_V4_TOKEN}`,
       },
     });
-    res.status(200).json(response.data);
+    const movies = data.results;
+    res.json({
+      success:true,
+      movies
+    })
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Failed to fetch now playing movies" });
