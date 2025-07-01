@@ -26,9 +26,9 @@ export const createBooking = async (req, res) =>{
   try {
 
     const {userId} = req.auth();
-    const {showId, selectedSeats} = req.body;
+    const {showId, selectedSeat} = req.body;
     const {origin} = req.headers;
-    const isAvailable = await checkSeatsAvailability(showId,selectedSeats);
+    const isAvailable = await checkSeatsAvailability(showId,selectedSeat);
 
     // If seat is not available
     if(!isAvailable){
@@ -45,12 +45,12 @@ export const createBooking = async (req, res) =>{
       const booking = await Booking.create({
         user : userId,
         show : showId,
-        amount : showData.showPrice * selectedSeats.lenght,
-        bookedSeats : selectedSeats
+        amount : showData.showPrice * selectedSeat.length,
+        bookedSeats : selectedSeat
       })
 
       // Reserving the  booked seats
-      selectedSeats.map((seat)=>{
+      selectedSeat.map((seat)=>{
         showData.occupiedSeats[seat] = userId;
       })
 

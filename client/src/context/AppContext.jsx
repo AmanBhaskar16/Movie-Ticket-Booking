@@ -30,7 +30,7 @@ export const AppProvider = ({children}) => {
       setIsAdmin(data.isAdmin);
       if(!data.isAdmin && location.pathname.startsWith('/admin')){
         navigate('/');
-        toast.error('Ypu are not authorized to access admin dashboard');
+        toast.error('You are not authorized to access admin dashboard');
       }
     } catch (error) {
       console.log(error);
@@ -40,7 +40,7 @@ export const AppProvider = ({children}) => {
   // To fetch all shows from the database and store in shows state
   const fetchShows = async () => {
     try {
-      const {data} = await axios.get('  /api/show/all')
+      const {data} = await axios.get('/api/show/all')
       if(data.success){
         setShows(data.shows);
       }else{
