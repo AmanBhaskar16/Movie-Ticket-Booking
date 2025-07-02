@@ -109,11 +109,121 @@ const confirmationMail = inngest.createFunction(
   }
 )
 
+// Function to send reminders
+
+const sendReminders = inngest.createFunction(
+  {id : "send-show-reminders"},
+  {cron : "0 */8 * * *"}, //Every 8 hrs
+  async ({step}) => {
+    const now = new Date();
+    const in8Hrs = new Date(now.getTime() + 8*60*60*1000);
+    const windowStart = new Date(in8Hrs.getTime()- 10*60*1000);
+    // Prepare reminder tasks
+    const reminderTasks = await step.run(
+      "prepare-reminder-tasks",async ()=>{
+        const shows = await Show.find({
+          showTime : {$gte : windowStart,$lte : in8Hrs},
+        }).populate('movie');
+        const tasks = [];
+        for(const show of shows){
+          if(!show.movie || !show.occupiedSeats){
+            continue;
+          }
+          const userIds = [...new Set(Object.values(show.occupiedSeats))];
+          if(userIds.length === 0){
+            continue;
+          }
+          const users = await User.find({_id : {$in : userIds}}).select("name email");
+
+          for(const user of users){
+            tasks.push({
+              userEmail : user.email,
+              userName : user.name,
+              movieTitle : show.movie.title,
+              showTime : show.showTime,
+            })
+          }
+        }
+        return tasks;
+      }
+    )
+    if(reminderTasks.length === 0){
+      return {sent : 0,message : "No reminder to send."}
+    }
+
+    // Send reminder emails
+    const results = await step.run('send-all-remin ders',async ()=>{
+      return await Promise.allSettled(
+        reminderTasks.map( task => 
+          sendEmail({
+            to : task.userEmail,
+            subject : `Reminder : Your movie "${task.movieTitle}" starts soon !!!`,
+            body : `<div style="font-family: Arial,sans-serif;line-height :1.5;">
+                <h2>Hi ${task.userName}</h2>
+                <p>This is a quick reminder that your movie :  <strong style="color:#F84565;">"${task.movieTitle}"</strong> is scheduled for </p>
+                <p>
+                <strong>Date :</strong> ${new Date(task.showTime).toLocaleDateString('en-US',{timeZone : 'Asia/Kolkata'})} <br/> at 
+                <strong>Time : </strong> ${new Date(task.showTime).toLocaleTimeString('en-US',{timeZone : 'Asia/Kolkata'})}
+                </p>
+                <p>It starts in approx <strong> 8 hours </strong>.Make sure you are ready!!!</p>
+                <p>Enjoy the show !!! <br/> - QueueUp Team</p>
+              </div>`
+          }))
+      )
+    })
+    const sent = results.filter(r => r.status === "fulfilled").length;
+    const failed = results.length - sent;
+
+    return {
+      sent,
+      failed,
+      message : `Sent ${sent} reminder(s), ${failed} failed.`
+    }
+  }
+)
+
+// Function to notify for new shows
+
+const newShowNotifications = inngest.createFunction(
+  {id : "send-new-show-notification"},
+  {event : "app/show.added"},
+  async ({event}) => {
+    const {movieTitle} = event.data;
+    const users = await User.find({});
+
+    for(const user of users){
+      const userEmail = user.email;
+      const userName = user.name;
+
+      const subject = `New Show Added : ${movieTitle}`;
+      const body = `<div style = "font-family:Arial,sans-serif;padding:20px;>
+                      <h2>Hi ${userName}</h2>
+                      <p>We have just added a new show to our Library.</p>
+                      <h3 style="color:#F84565">"${movieTitle}"</h3>
+                      <p>Visit our website.</p>
+                      <br/>
+                      <p>Thanks, <br/>QueueUp Team</p>
+                    </div>`
+
+      await sendEmail({
+        to : userEmail,
+        subject,
+        body,
+      });
+    }
+    return {
+      message : "Notification sent."
+    }
+  }
+)
+
 // Create an empty array where we'll export future Inngest functions
 export const functions = [
   syncUserCreation,
   syncUserDeletion,
   syncUserUpdation,
   releaseSeatsAndDeleteBooking,
-  confirmationMail
+  confirmationMail,
+  sendReminders,
+  newShowNotifications
 ];

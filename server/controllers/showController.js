@@ -3,6 +3,7 @@ import Movie from "../models/Movie.js";
 dotenv.config();
 import axios from 'axios';
 import Show from "../models/Show.js";
+import { inngest } from "../inngest/index.js";
 
 // Function to fetch data from tmdb database 
 // export const getCurrentPlayingMovie = async (req, res) => {
@@ -109,6 +110,13 @@ export const addShow = async (req,res) =>{
       if(showsToCreate.length > 0){
         await Show.insertMany(showsToCreate);
       }
+
+      // Trigger new show notification
+
+      await inngest.send({
+        name : "app/show.added",
+        data : {movieTitle : movie.title}
+      })
 
       res.json({
         success : true,
