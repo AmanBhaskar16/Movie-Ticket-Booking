@@ -1,8 +1,8 @@
-import Stripe from "stripe";
+import stripe from "stripe";
 import Booking from "../models/Booking.js";
 
 export const stripeWebhooks = async (req,res) => {
-  const stripeInstance = new stripeWebhooks(process.env.STRIPE_SECRET_KEY);
+  const stripeInstance = new stripe(process.env.STRIPE_SECRET_KEY);
   const sig = req.headers["stripe-signature"];
   let event;
   try {
@@ -13,15 +13,17 @@ export const stripeWebhooks = async (req,res) => {
 
   try {
     switch (event.type) {
-      case "payment_intent_succeeded":
+      case 'payment_intent.succeeded' : 
         {
           const paymentIntent = event.data.object;
           const sessionList = await stripeInstance.checkout.sessions.list({
             payment_intent : paymentIntent.id
           })
+          console.log(sessionList);
 
           const session = sessionList.data[0];
           const {bookingId} = session.metadata;
+          console.log(bookingId);
 
           await Booking.findByIdAndUpdate(bookingId,{
             isPaid : true,
@@ -32,7 +34,6 @@ export const stripeWebhooks = async (req,res) => {
 
       default:
         console.log("Unhandled event type : ",event.type);
-        break;
     }
     res.json({
       received : true

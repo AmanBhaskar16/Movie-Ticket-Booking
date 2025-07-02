@@ -9,19 +9,19 @@ const HeroSection = () => {
 
   return (
 
-    <div className='flex flex-col items-start justify-center gap-4 px-6 md:px-16 lg:px-36 bg-[url("/backgroundImage.png")] bg-cover bg-center h-screen'>
+    <div className='flex flex-col items-start justify-center gap-4 px-6 md:px-16 lg:px-36 bg-[url("/bg-image.jpg")] bg-cover bg-center h-screen'>
       <img src={assets.marvelLogo} alt="" className='max-h-11 lg:h-11 mt-20'/>
-      <h1 className='text-5xl md:text-[70px] md:leading-18 font-semibold max-w-110'>Guardians <br />of the Galaxy</h1>
-      <div className='flex items-center gap-4 text-gray-300'>
+      <h1 className='text-5xl md:text-[70px] md:leading-18 font-semibold max-w-110'>Moon <br />Knight</h1>
+      <div className='flex items-center gap-4 text-blue-50'>
       <span>Action | Adventure | Sci-fi</span>
       <div className='flex items-center gap-1'>
-        <CalendarIcon className='w-4.5 h-4.5'/> 2018
+        <CalendarIcon className='w-4.5 h-4.5'/> 2022
       </div>
       <div className='flex items-center gap-1'>
         <ClockIcon className='w-4.5 h-4.5'/> 2h 8m
       </div>
       </div>
-      <p className='max-w-md text-gray-300'>Guardians of the Galaxy is a high-stakes space adventure where a band of misfits must unite to stop a powerful villain from destroying the universe. In the chaos, they find purpose, redemption—and each other.</p>
+      <p className='max-w-md text-gray-300'>Moon Knight is a gripping Marvel series about Marc Spector, a troubled man with dissociative identity disorder who becomes the avatar of the Egyptian moon god Khonshu. Blending psychological thriller, action, and mythology, it explores his battle between identities and a dark supernatural war.</p>
       <button onClick={()=>navigate("/movies")} className='flex items-center gap-1 px-6 py-3 text-sm bg-primary hover:bg-primary-dull transition rounded-full font-medium cursor-pointer'>
         Explore Movies
         <ArrowRight className='w-5 h-5'/>
